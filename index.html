@@ -51,15 +51,24 @@
       margin-bottom: 16px;
       font-size: 14px;
     }
-    .loading {
-      display: none;
-      margin-top: 20px;
-      font-size: 14px;
-      opacity: 0.7;
+    .debug-info {
+      background: rgba(255,0,0,0.1);
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 16px;
+      font-size: 11px;
+      text-align: left;
+      max-height: 150px;
+      overflow-y: auto;
     }
-    .loading.active {
-      display: block;
+    .status {
+      margin-top: 12px;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 13px;
     }
+    .status.success { background: rgba(0,255,0,0.2); }
+    .status.error { background: rgba(255,0,0,0.2); }
   </style>
 </head>
 <body>
@@ -77,73 +86,107 @@
     <button onclick="sendCommand('infobot')">ℹ️ Info Bot</button>
   </div>
   
-  <div id="loading" class="loading">Mengirim perintah...</div>
+  <div id="status"></div>
   
   <button class="close-btn" onclick="closeApp()">❌ Tutup Mini Map</button>
 
+  <div id="debug" class="debug-info"></div>
+
   <script>
-    const tg = window.Telegram.WebApp;
-
-    tg.ready();
+    const debugLog = [];
     
-    tg.expand();
-
-    tg.MainButton.hide();
-
-    if (tg.themeParams.bg_color) {
-      document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
-    }
-    if (tg.themeParams.text_color) {
-      document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
-    }
-    if (tg.themeParams.button_color) {
-      document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
-    }
-    if (tg.themeParams.button_text_color) {
-      document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
+    function log(msg) {
+      const timestamp = new Date().toLocaleTimeString();
+      debugLog.push(`[${timestamp}] ${msg}`);
+      document.getElementById('debug').innerHTML = debugLog.join('<br>');
+      console.log(msg);
     }
 
-    if (tg.initDataUnsafe.user) {
-      const user = tg.initDataUnsafe.user;
-      document.getElementById('userInfo').innerHTML = `
-        👋 Halo, <strong>${user.first_name}</strong>!
-      `;
+    log('Script started');
+
+    let tg;
+    try {
+      tg = window.Telegram.WebApp;
+      log('✓ Telegram WebApp loaded');
+    } catch (e) {
+      log('✗ ERROR loading Telegram WebApp: ' + e.message);
+    }
+
+    if (tg) {
+      try {
+        tg.ready();
+        log('✓ WebApp ready');
+      } catch (e) {
+        log('✗ ERROR calling ready(): ' + e.message);
+      }
+
+      try {
+        tg.expand();
+        log('✓ WebApp expanded');
+      } catch (e) {
+        log('✗ ERROR calling expand(): ' + e.message);
+      }
+
+      log('Platform: ' + tg.platform);
+      log('Version: ' + tg.version);
+      log('initDataUnsafe: ' + JSON.stringify(tg.initDataUnsafe));
+
+      if (tg.initDataUnsafe.user) {
+        const user = tg.initDataUnsafe.user;
+        document.getElementById('userInfo').innerHTML = `
+          👋 Halo, <strong>${user.first_name}</strong>!
+        `;
+        log('User: ' + user.first_name);
+      } else {
+        log('⚠ No user data');
+      }
+    }
+
+    function showStatus(msg, isError = false) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = msg;
+      statusEl.className = 'status ' + (isError ? 'error' : 'success');
+      setTimeout(() => {
+        statusEl.textContent = '';
+        statusEl.className = 'status';
+      }, 3000);
     }
 
     function sendCommand(cmd) {
-      console.log('Mengirim perintah:', cmd);
+      log('sendCommand called with: ' + cmd);
       
-      const loadingEl = document.getElementById('loading');
-      loadingEl.classList.add('active');
-      
+      if (!tg) {
+        log('✗ Telegram WebApp not available!');
+        showStatus('❌ Telegram WebApp tidak tersedia', true);
+        return;
+      }
+
       try {
+        log('Calling tg.sendData("' + cmd + '")...');
         tg.sendData(cmd);
+        log('✓ sendData executed successfully');
         
-        console.log('Data terkirim:', cmd);
+        showStatus('✅ Perintah terkirim: ' + cmd);
         
         setTimeout(() => {
+          log('Closing WebApp...');
           tg.close();
-        }, 600);
+        }, 800);
         
       } catch (error) {
-        console.error('Error mengirim data:', error);
-        
-        loadingEl.textContent = '❌ Gagal mengirim';
-        setTimeout(() => {
-          loadingEl.classList.remove('active');
-          loadingEl.textContent = 'Mengirim perintah...';
-        }, 2000);
+        log('✗ ERROR in sendCommand: ' + error.message);
+        showStatus('❌ Gagal: ' + error.message, true);
       }
     }
 
     function closeApp() {
-      tg.close();
+      log('closeApp called');
+      if (tg) {
+        tg.close();
+      }
     }
 
-    console.log('Mini Map initialized');
-    console.log('Telegram WebApp version:', tg.version);
-    console.log('Platform:', tg.platform);
-    console.log('User data:', tg.initDataUnsafe);
+    log('Initialization complete');
   </script>
 </body>
 </html>
