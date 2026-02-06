@@ -15,12 +15,13 @@
       text-align: center;
     }
     h1 { margin: 16px 0; font-size: 24px; }
+    p { margin: 8px 0; opacity: 0.8; }
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
       max-width: 400px;
-      margin: 0 auto;
+      margin: 20px auto;
     }
     button {
       padding: 16px;
@@ -31,20 +32,42 @@
       color: var(--tg-theme-button-text-color, #fff);
       cursor: pointer;
       transition: all 0.2s;
+      font-weight: 600;
     }
-    button:active { transform: scale(0.98); opacity: 0.9; }
+    button:active { 
+      transform: scale(0.95); 
+      opacity: 0.8; 
+    }
     .close-btn {
       background: #444;
       margin-top: 24px;
       width: 100%;
+      max-width: 400px;
+    }
+    .user-info {
+      background: rgba(255,255,255,0.1);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    .loading {
+      display: none;
+      margin-top: 20px;
+      font-size: 14px;
+      opacity: 0.7;
+    }
+    .loading.active {
+      display: block;
     }
   </style>
 </head>
 <body>
-
+  <div id="userInfo" class="user-info"></div>
+  
   <h1>🗺️ Mini Map</h1>
   <p>Pilih menu dengan cepat</p>
-
+  
   <div class="grid">
     <button onclick="sendCommand('list_product')">🛒 List Product</button>
     <button onclick="sendCommand('top_buyer')">🏆 Top 5 Buyer</button>
@@ -53,31 +76,74 @@
     <button onclick="sendCommand('start')">🏠 Home / Start</button>
     <button onclick="sendCommand('infobot')">ℹ️ Info Bot</button>
   </div>
-
-  <button class="close-btn" onclick="Telegram.WebApp.close()">Tutup Mini Map</button>
+  
+  <div id="loading" class="loading">Mengirim perintah...</div>
+  
+  <button class="close-btn" onclick="closeApp()">❌ Tutup Mini Map</button>
 
   <script>
-    // Inisialisasi Telegram Mini App
-    Telegram.WebApp.ready();
-    Telegram.WebApp.expand(); // buka full screen kalau bisa
+    const tg = window.Telegram.WebApp;
 
-    // Sesuaikan tema Telegram (light/dark)
-    document.documentElement.style.setProperty('--tg-theme-bg-color', Telegram.WebApp.themeParams.bg_color);
-    document.documentElement.style.setProperty('--tg-theme-text-color', Telegram.WebApp.themeParams.text_color);
-    document.documentElement.style.setProperty('--tg-theme-button-color', Telegram.WebApp.themeParams.button_color);
-    document.documentElement.style.setProperty('--tg-theme-button-text-color', Telegram.WebApp.themeParams.button_text_color);
+    tg.ready();
+    
+    tg.expand();
+
+    tg.MainButton.hide();
+
+    if (tg.themeParams.bg_color) {
+      document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
+    }
+    if (tg.themeParams.text_color) {
+      document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
+    }
+    if (tg.themeParams.button_color) {
+      document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
+    }
+    if (tg.themeParams.button_text_color) {
+      document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
+    }
+
+    if (tg.initDataUnsafe.user) {
+      const user = tg.initDataUnsafe.user;
+      document.getElementById('userInfo').innerHTML = `
+        👋 Halo, <strong>${user.first_name}</strong>!
+      `;
+    }
 
     function sendCommand(cmd) {
-      Telegram.WebApp.sendData(cmd);
-      // Optional: tampilkan loading sebentar
-      Telegram.WebApp.MainButton.setText('Loading...').show();
-      setTimeout(() => Telegram.WebApp.close(), 800);
+      console.log('Mengirim perintah:', cmd);
+      
+      const loadingEl = document.getElementById('loading');
+      loadingEl.classList.add('active');
+      
+      try {
+        tg.sendData(cmd);
+        
+        console.log('Data terkirim:', cmd);
+        
+        setTimeout(() => {
+          tg.close();
+        }, 600);
+        
+      } catch (error) {
+        console.error('Error mengirim data:', error);
+        
+        loadingEl.textContent = '❌ Gagal mengirim';
+        setTimeout(() => {
+          loadingEl.classList.remove('active');
+          loadingEl.textContent = 'Mengirim perintah...';
+        }, 2000);
+      }
     }
 
-    // Optional: Tampilkan nama user
-    if (Telegram.WebApp.initDataUnsafe.user) {
-      document.body.insertAdjacentHTML('afterbegin', `<p>Halo, ${Telegram.WebApp.initDataUnsafe.user.first_name}!</p>`);
+    function closeApp() {
+      tg.close();
     }
+
+    console.log('Mini Map initialized');
+    console.log('Telegram WebApp version:', tg.version);
+    console.log('Platform:', tg.platform);
+    console.log('User data:', tg.initDataUnsafe);
   </script>
 </body>
 </html>
