@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Mini Map - Bot Order</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--tg-theme-bg-color, #000);
+      color: var(--tg-theme-text-color, #fff);
+      padding: 16px;
+      text-align: center;
+    }
+    h1 { margin: 16px 0; font-size: 24px; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    button {
+      padding: 16px;
+      font-size: 16px;
+      border: none;
+      border-radius: 12px;
+      background: var(--tg-theme-button-color, #0088cc);
+      color: var(--tg-theme-button-text-color, #fff);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:active { transform: scale(0.98); opacity: 0.9; }
+    .close-btn {
+      background: #444;
+      margin-top: 24px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🗺️ Mini Map</h1>
+  <p>Pilih menu dengan cepat</p>
+
+  <div class="grid">
+    <button onclick="sendCommand('list_product')">🛒 List Product</button>
+    <button onclick="sendCommand('top_buyer')">🏆 Top 5 Buyer</button>
+    <button onclick="sendCommand('best_seller')">⭐ Best Seller</button>
+    <button onclick="sendCommand('tutorial')">📚 Tutorial Order</button>
+    <button onclick="sendCommand('start')">🏠 Home / Start</button>
+    <button onclick="sendCommand('infobot')">ℹ️ Info Bot</button>
+  </div>
+
+  <button class="close-btn" onclick="Telegram.WebApp.close()">Tutup Mini Map</button>
+
+  <script>
+    // Inisialisasi Telegram Mini App
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand(); // buka full screen kalau bisa
+
+    // Sesuaikan tema Telegram (light/dark)
+    document.documentElement.style.setProperty('--tg-theme-bg-color', Telegram.WebApp.themeParams.bg_color);
+    document.documentElement.style.setProperty('--tg-theme-text-color', Telegram.WebApp.themeParams.text_color);
+    document.documentElement.style.setProperty('--tg-theme-button-color', Telegram.WebApp.themeParams.button_color);
+    document.documentElement.style.setProperty('--tg-theme-button-text-color', Telegram.WebApp.themeParams.button_text_color);
+
+    function sendCommand(cmd) {
+      Telegram.WebApp.sendData(cmd);
+      // Optional: tampilkan loading sebentar
+      Telegram.WebApp.MainButton.setText('Loading...').show();
+      setTimeout(() => Telegram.WebApp.close(), 800);
+    }
+
+    // Optional: Tampilkan nama user
+    if (Telegram.WebApp.initDataUnsafe.user) {
+      document.body.insertAdjacentHTML('afterbegin', `<p>Halo, ${Telegram.WebApp.initDataUnsafe.user.first_name}!</p>`);
+    }
+  </script>
+</body>
+</html>
